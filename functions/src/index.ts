@@ -4,13 +4,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 admin.initializeApp();
 
-// Get Gemini API Key from Firebase Functions config
-// Run `firebase functions:config:set gemini.key="YOUR_API_KEY"` to set
-// FIX: Cast functions.config() to `any` to work around a type inference issue where it was being resolved as `never`.
-const API_KEY = (functions.config() as any).gemini.key;
+// The Gemini API key is expected to be in the `API_KEY` environment variable.
+const API_KEY = process.env.API_KEY;
 
 if (!API_KEY) {
-  throw new Error("Gemini API Key is not set in Firebase Functions config.");
+  throw new Error("Gemini API Key (API_KEY) is not set in the function's environment variables.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
@@ -136,7 +134,7 @@ const handleGetRecommendations = async (criticalZips: ZipAnalysis[]): Promise<Re
 };
 
 
-// FIX: Explicitly typed `data` and `context` parameters to fix incorrect type inference for the onCall handler.
+// FIX: Correctly typed the `context` parameter to `functions.https.CallableContext` to resolve the type error.
 export const callGemini = functions.https.onCall(async (data: any, context: functions.https.CallableContext) => {
   // Check authentication
   if (!context.auth) {

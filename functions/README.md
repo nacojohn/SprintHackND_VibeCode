@@ -6,15 +6,7 @@ This directory contains the backend cloud functions for the application.
 
 1.  **Install Dependencies**: Navigate to this `functions` directory and run `npm install`.
 
-2.  **Set Environment Variables**: The Gemini API key must be set as a Firebase Function configuration variable. This is a secure way to store secrets.
-
-    Run the following command from the root of your project, replacing `your-api-key` with your actual Gemini API key:
-
-    ```bash
-    firebase functions:config:set gemini.key="your-api-key"
-    ```
-
-    You only need to do this once per project.
+2.  **Environment Variables**: This project requires the `API_KEY` environment variable to be set for the functions with your Gemini API key. For deployment, this should be configured as a secret. For local development, this can be set in an `.env` file within the `functions` directory.
 
 ## Deployment
 

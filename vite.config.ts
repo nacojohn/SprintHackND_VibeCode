@@ -10,10 +10,6 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
       resolve: {
         alias: {
           // FIX: Replaced `path.resolve(__dirname, '.')` with `path.resolve('.')` as `__dirname` is not available in ES module scope. This correctly resolves to the project root.
