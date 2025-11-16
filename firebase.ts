@@ -1,4 +1,4 @@
-// FIX: Add a triple-slash directive to include Vite client types, which resolves the 'import.meta.env' type errors.
+// FIX: Add a triple-slash directive to include Vite client types, which resolves 'import.meta.env' type errors.
 /// <reference types="vite/client" />
 
 import firebase from 'firebase/compat/app';

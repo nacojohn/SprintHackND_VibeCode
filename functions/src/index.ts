@@ -6,7 +6,8 @@ admin.initializeApp();
 
 // Get Gemini API Key from Firebase Functions config
 // Run `firebase functions:config:set gemini.key="YOUR_API_KEY"` to set
-const API_KEY = functions.config().gemini.key;
+// FIX: Cast functions.config() to `any` to work around a type inference issue where it was being resolved as `never`.
+const API_KEY = (functions.config() as any).gemini.key;
 
 if (!API_KEY) {
   throw new Error("Gemini API Key is not set in Firebase Functions config.");
@@ -93,7 +94,11 @@ const handleGetForecast = async (analysis: AnalysisResult) => {
             temperature: 0.5,
         },
     });
-    return JSON.parse(response.text);
+    const text = response.text;
+    if (!text) {
+        throw new functions.https.HttpsError("internal", "Received an empty response from Gemini API for forecast.");
+    }
+    return JSON.parse(text);
 };
 
 
@@ -122,12 +127,17 @@ const handleGetRecommendations = async (criticalZips: ZipAnalysis[]): Promise<Re
             temperature: 0.7,
         },
     });
-    const json: Recommendation[] = JSON.parse(response.text);
+    const text = response.text;
+    if (!text) {
+        throw new functions.https.HttpsError("internal", "Received an empty response from Gemini API for recommendations.");
+    }
+    const json: Recommendation[] = JSON.parse(text);
     return json.sort((a, b) => b.priorityScore - a.priorityScore);
 };
 
 
-export const callGemini = functions.https.onCall(async (data, context) => {
+// FIX: Explicitly typed `data` and `context` parameters to fix incorrect type inference for the onCall handler.
+export const callGemini = functions.https.onCall(async (data: any, context: functions.https.CallableContext) => {
   // Check authentication
   if (!context.auth) {
     throw new functions.https.HttpsError(

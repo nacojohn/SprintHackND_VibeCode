@@ -60,7 +60,11 @@ export async function getForecast(analysis: AnalysisResult) {
                 temperature: 0.5,
             },
         });
-        const json = JSON.parse(response.text);
+        const text = response.text;
+        if (!text) {
+          throw new Error("Received empty response from Gemini API for forecast.");
+        }
+        const json = JSON.parse(text);
         return json;
     } catch (error) {
         console.error("Error getting forecast from Gemini:", error);
@@ -94,7 +98,11 @@ export async function getRecommendations(criticalZips: ZipAnalysis[]): Promise<R
                 temperature: 0.7,
             },
         });
-        const json: Recommendation[] = JSON.parse(response.text);
+        const text = response.text;
+        if (!text) {
+          throw new Error("Received empty response from Gemini API for recommendations.");
+        }
+        const json: Recommendation[] = JSON.parse(text);
         // Sort by priority score descending
         return json.sort((a, b) => b.priorityScore - a.priorityScore);
     } catch (error) {
