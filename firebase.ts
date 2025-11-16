@@ -1,17 +1,6 @@
-// FIX: Removed vite/client reference that was causing a resolution error and manually defined
-// the ImportMeta interface to provide types for environment variables.
-interface ImportMetaEnv {
-  readonly VITE_FIREBASE_API_KEY: string;
-  readonly VITE_FIREBASE_AUTH_DOMAIN: string;
-  readonly VITE_FIREBASE_PROJECT_ID: string;
-  readonly VITE_FIREBASE_STORAGE_BUCKET: string;
-  readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
-  readonly VITE_FIREBASE_APP_ID: string;
-}
 
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
-}
+// FIX: Replaced manual and incorrect ImportMeta definitions with the standard Vite client types reference.
+/// <reference types="vite/client" />
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';

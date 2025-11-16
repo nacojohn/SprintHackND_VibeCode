@@ -16,22 +16,39 @@ const GoogleIcon: React.FC = () => (
 );
 
 const LoginPage: React.FC = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    try {
-      // FIX: Changed to v8 compat syntax for signInWithEmailAndPassword.
-      await auth.signInWithEmailAndPassword(email, password);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+
+    if (isSignUp) {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        setLoading(false);
+        return;
+      }
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -39,7 +56,6 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // FIX: Changed to v8 compat syntax for GoogleAuthProvider and signInWithPopup.
       const provider = new firebase.auth.GoogleAuthProvider();
       await auth.signInWithPopup(provider);
     } catch (err: any) {
@@ -51,17 +67,17 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
         <div className="text-center">
             <div className="flex justify-center items-center space-x-2 mb-4">
                 <ShieldCheckIcon className="w-10 h-10 text-blue-600" />
                  <h1 className="text-2xl font-bold text-gray-800">OSDR AI Agent</h1>
             </div>
-          <h2 className="text-2xl font-bold text-gray-700">Welcome Back</h2>
-          <p className="text-gray-500">Sign in to access the dashboard</p>
+          <h2 className="text-2xl font-bold text-gray-700">{isSignUp ? 'Create an Account' : 'Welcome Back'}</h2>
+          <p className="text-gray-500">{isSignUp ? 'Get started with your dashboard' : 'Sign in to access the dashboard'}</p>
         </div>
         
-        <form className="space-y-6" onSubmit={handleLogin}>
+        <form className="space-y-6" onSubmit={handleFormSubmit}>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <div className="relative">
             <MailIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -85,21 +101,48 @@ const LoginPage: React.FC = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             />
           </div>
+
+          {isSignUp && (
+            <div className="relative">
+              <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input 
+                type="password" 
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              />
+            </div>
+          )}
           
-          <div className="text-right">
-            <a href="#" className="text-sm text-blue-600 hover:underline">Forgot Password?</a>
-          </div>
+          {!isSignUp && (
+            <div className="text-right">
+              <a href="#" className="text-sm text-blue-600 hover:underline">Forgot Password?</a>
+            </div>
+          )}
           
           <button 
             type="submit"
             disabled={loading}
             className="w-full py-3 px-4 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 disabled:bg-blue-400"
           >
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
           </button>
         </form>
 
-        <div className="relative flex items-center justify-center my-6">
+        <div className="text-sm text-center text-gray-500">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+            <button 
+              type="button" 
+              onClick={() => setIsSignUp(!isSignUp)} 
+              className="font-semibold text-blue-600 hover:underline ml-1"
+            >
+              {isSignUp ? 'Sign In' : 'Sign Up'}
+            </button>
+        </div>
+
+        <div className="relative flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
             </div>

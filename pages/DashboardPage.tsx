@@ -1,3 +1,4 @@
+
 import React from 'react';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import OverviewPanel from '../components/dashboard/OverviewPanel';
@@ -11,8 +12,8 @@ import ZipDetailModal from '../components/dashboard/ZipDetailModal';
 import firebase from 'firebase/compat/app';
 
 interface DashboardPageProps {
-  // FIX: Use firebase.auth.User as the type for the user prop.
-  user: firebase.auth.User;
+  // FIX: Use firebase.User which is the correct type for the v8 compat library user object.
+  user: firebase.User;
   handleLogout: () => void;
 }
 

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
 import { Incident, AnalysisResult, analyzeIncidents } from '../utils/analysis';
 import { getForecast, getRecommendations, Recommendation } from '../utils/gemini';
@@ -48,8 +49,8 @@ const initialAnalysis: AnalysisResult = {
   zipAnalyses: [],
 };
 
-// FIX: Use firebase.auth.User as the type for the user prop.
-export const DataProvider: React.FC<{ children: ReactNode; user: firebase.auth.User }> = ({ children, user }) => {
+// FIX: Use firebase.User which is the correct type for the v8 compat library user object.
+export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }> = ({ children, user }) => {
   const [rawData, setRawData] = useState<Incident[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult>(initialAnalysis);
   const [recommendations, setRecommendations] = useState<RecommendationWithStatus[]>([]);
