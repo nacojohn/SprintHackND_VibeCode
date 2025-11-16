@@ -1,0 +1,5 @@
+{
+  "name": "Opioid Spike Detection & Response AI Agent",
+  "description": "An AI-powered decision support system that empowers county public health overdose response teams to detect opioid overdose spikes in real-time, forecast emerging risks, and receive actionable intervention recommendations.",
+  "requestFramePermissions": []
+}
