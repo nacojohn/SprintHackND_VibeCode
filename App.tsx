@@ -3,12 +3,14 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import { auth } from './firebase';
-import { User } from 'firebase/auth';
+// FIX: The User type from 'firebase/auth' is for the v9 modular SDK. This project uses the v8 compat library.
+import firebase from 'firebase/compat/app';
 
 export type Page = 'landing' | 'login' | 'dashboard';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  // FIX: Use firebase.auth.User as the type for the user state.
+  const [user, setUser] = useState<firebase.auth.User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

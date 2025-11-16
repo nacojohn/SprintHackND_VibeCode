@@ -2,10 +2,12 @@ import React from 'react';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { LogOutIcon } from '../icons/LogOutIcon';
 import { useData } from '../../contexts/DataContext';
-import { User } from 'firebase/auth';
+// FIX: The User type from 'firebase/auth' is for the v9 modular SDK. This project uses the v8 compat library.
+import firebase from 'firebase/compat/app';
 
 interface DashboardHeaderProps {
-  user: User;
+  // FIX: Use firebase.auth.User as the type for the user prop.
+  user: firebase.auth.User;
   handleLogout: () => void;
 }
 
