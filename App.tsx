@@ -1,25 +1,52 @@
+import React, { useState, useEffect } from 'react';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import { auth } from './firebase';
+import { User } from 'firebase/auth';
 
-import React from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Features from './components/Features';
-import ProblemSolution from './components/ProblemSolution';
-import HowItWorks from './components/HowItWorks';
-import Testimonial from './components/Testimonial';
-import Footer from './components/Footer';
+export type Page = 'landing' | 'login' | 'dashboard';
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = () => {
+    auth.signOut();
+  };
+  
+  const navigateTo = (page: Page) => {
+     if (page === 'login') {
+       // A bit of a hack to show login page when user is logged out
+       // but wants to navigate from landing page.
+       setUser(null);
+     }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-gray-600">Loading Application...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen text-gray-800 font-sans">
-      <Header />
-      <main>
-        <Hero />
-        <ProblemSolution />
-        <Features />
-        <HowItWorks />
-        <Testimonial />
-      </main>
-      <Footer />
+      {user ? (
+        <DashboardPage user={user} handleLogout={handleLogout} />
+      ) : (
+         <LandingPage navigateTo={navigateTo} />
+        // <LoginPage /> // This is now part of the conditional rendering logic
+      )}
     </div>
   );
 };

@@ -5,32 +5,32 @@ const HowItWorks: React.FC = () => {
   const steps = [
     {
       number: 1,
-      title: 'Upload Your Data',
-      description: 'Easily upload your local ODMAP export (CSV/Excel). Our system validates and processes the data in seconds.',
+      title: 'Real-Time Analysis',
+      description: 'Our AI engine continuously analyzes overdose data, detecting statistical anomalies at the ZIP-code level as they emerge.',
     },
     {
       number: 2,
-      title: 'AI Analyzes & Forecasts',
-      description: 'Gemini API analyzes historical and current data to detect active spikes and forecast emerging risks by ZIP code.',
+      title: 'Predictive Forecasting',
+      description: 'Look ahead 3-7 days with predictive analytics that identify at-risk areas before a crisis escalates, allowing for proactive resource staging.',
     },
     {
       number: 3,
-      title: 'Get Actionable Insights',
-      description: 'Receive a prioritized list of interventions, resource suggestions, and auto-generated reports on your dashboard.',
+      title: 'Prioritized Recommendations',
+      description: 'Receive clear, data-driven recommendations on where and how to deploy mobile teams and naloxone for maximum impact.',
     },
      {
       number: 4,
-      title: 'Deploy & Communicate',
-      description: 'Use AI-generated templates to instantly alert partners and leadership, ensuring a coordinated and rapid response.',
+      title: 'Automated Communication',
+      description: 'Instantly generate reports and outreach templates to ensure all stakeholders are informed for a rapid, coordinated response.',
     },
   ];
 
   return (
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold text-gray-900">Get Started in 4 Simple Steps</h2>
+        <h2 className="text-3xl font-bold text-gray-900">From Data to Life-Saving Action</h2>
         <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-          Transform your data into life-saving action with a streamlined workflow.
+          Our AI agent transforms raw data into a clear, strategic response with a streamlined workflow.
         </p>
         <div className="mt-12 relative">
           {/* Dashed line for desktop */}
