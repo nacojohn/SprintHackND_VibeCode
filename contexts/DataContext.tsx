@@ -31,7 +31,8 @@ interface DataContextType {
   setIsUploadModalOpen: (isOpen: boolean) => void;
   selectedZip: string | null;
   setSelectedZip: (zip: string | null) => void;
-  addIncidents: (newIncidents: Omit<Incident, 'dateTime'> & { dateTime: any }[]) => Promise<void>;
+  // FIX: Corrected the type for newIncidents to be an array of objects.
+  addIncidents: (newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[]) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -111,7 +112,8 @@ export const DataProvider: React.FC<{ children: ReactNode; user: User }> = ({ ch
     fetchIncidents();
   }, [fetchIncidents]);
   
-  const addIncidents = async (newIncidents: Omit<Incident, 'dateTime'> & { dateTime: any }[]) => {
+  // FIX: Corrected the type for newIncidents and wrapped in useCallback.
+  const addIncidents = useCallback(async (newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[]) => {
     if (!user) throw new Error("User not authenticated");
     
     const batch = db.batch();
@@ -124,7 +126,7 @@ export const DataProvider: React.FC<{ children: ReactNode; user: User }> = ({ ch
     
     await batch.commit();
     await fetchIncidents(); // Refetch all data to re-run analysis
-  };
+  }, [user, fetchIncidents]);
 
   const toggleRecommendationCompleted = (index: number) => {
     setRecommendations(currentRecommendations =>
