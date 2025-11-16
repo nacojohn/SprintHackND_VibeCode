@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useEffe
 import { Incident, AnalysisResult, analyzeIncidents } from '../utils/analysis';
 import { getForecast, getRecommendations, Recommendation } from '../utils/gemini';
 import { db } from '../firebase';
-import { User } from 'firebase/auth';
+// FIX: The User type from 'firebase/auth' is for the v9 modular SDK. This project uses the v8 compat library.
+import firebase from 'firebase/compat/app';
 
 export interface RecommendationWithStatus extends Recommendation {
   completed: boolean;
@@ -47,7 +48,8 @@ const initialAnalysis: AnalysisResult = {
   zipAnalyses: [],
 };
 
-export const DataProvider: React.FC<{ children: ReactNode; user: User }> = ({ children, user }) => {
+// FIX: Use firebase.auth.User as the type for the user prop.
+export const DataProvider: React.FC<{ children: ReactNode; user: firebase.auth.User }> = ({ children, user }) => {
   const [rawData, setRawData] = useState<Incident[]>([]);
   const [analysis, setAnalysis] = useState<AnalysisResult>(initialAnalysis);
   const [recommendations, setRecommendations] = useState<RecommendationWithStatus[]>([]);

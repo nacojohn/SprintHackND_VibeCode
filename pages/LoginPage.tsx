@@ -3,7 +3,8 @@ import { auth } from '../firebase';
 import { ShieldCheckIcon } from '../components/icons/ShieldCheckIcon';
 import { MailIcon } from '../components/icons/MailIcon';
 import { LockClosedIcon } from '../components/icons/LockClosedIcon';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+// FIX: Removed v9 modular imports. Authentication methods will be called from the `auth` object, and GoogleAuthProvider will be accessed from the `firebase` object.
+import firebase from 'firebase/compat/app';
 
 const GoogleIcon: React.FC = () => (
     <svg className="w-5 h-5" viewBox="0 0 48 48">
@@ -25,7 +26,8 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // FIX: Changed to v8 compat syntax for signInWithEmailAndPassword.
+      await auth.signInWithEmailAndPassword(email, password);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,8 +39,9 @@ const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      // FIX: Changed to v8 compat syntax for GoogleAuthProvider and signInWithPopup.
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
     } catch (err: any) {
       setError(err.message);
     } finally {

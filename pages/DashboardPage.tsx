@@ -7,10 +7,12 @@ import RecommendationsPanel from '../components/dashboard/RecommendationsPanel';
 import { DataProvider } from '../contexts/DataContext';
 import DataUploadModal from '../components/dashboard/DataUploadModal';
 import ZipDetailModal from '../components/dashboard/ZipDetailModal';
-import { User } from 'firebase/auth';
+// FIX: The User type from 'firebase/auth' is for the v9 modular SDK. This project uses the v8 compat library.
+import firebase from 'firebase/compat/app';
 
 interface DashboardPageProps {
-  user: User;
+  // FIX: Use firebase.auth.User as the type for the user prop.
+  user: firebase.auth.User;
   handleLogout: () => void;
 }
 
