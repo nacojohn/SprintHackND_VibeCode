@@ -4,11 +4,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 admin.initializeApp();
 
-// The Gemini API key is expected to be in the `API_KEY` environment variable.
-const API_KEY = process.env.API_KEY;
+// The Gemini API key is expected to be set in Firebase config.
+// Set it by running: firebase functions:config:set gemini.key="YOUR_API_KEY"
+const API_KEY = functions.config().gemini?.key;
 
 if (!API_KEY) {
-  throw new Error("Gemini API Key (API_KEY) is not set in the function's environment variables.");
+  throw new Error("Gemini API Key is not set in Firebase Functions config. " +
+    "Set it with: firebase functions:config:set gemini.key=\"YOUR_API_KEY\"");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
