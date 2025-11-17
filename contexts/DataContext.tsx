@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect, useCallback } from 'react';
-import { Incident, AnalysisResult, analyzeIncidents } from '../utils/analysis';
+import { Incident, AnalysisResult } from '../utils/analysis';
 import { getForecast, getRecommendations, Recommendation } from '../utils/gemini';
 import { db } from '../firebase';
 // FIX: The User type from 'firebase/auth' is for the v9 modular SDK. This project uses the v8 compat library.
@@ -57,6 +56,29 @@ const initialAnalysis: AnalysisResult = {
   zipAnalyses: [],
 };
 
+const runAnalysisInWorker = (data: Incident[]): Promise<AnalysisResult> => {
+  return new Promise((resolve, reject) => {
+    // Vite-specific syntax for creating a worker
+    const worker = new Worker(new URL('../worker/analysis.worker.ts', import.meta.url), {
+      type: 'module',
+    });
+
+    worker.onmessage = (event) => {
+      resolve(event.data as AnalysisResult);
+      worker.terminate();
+    };
+
+    worker.onerror = (error) => {
+      console.error('Worker error:', error);
+      reject(new Error('Failed to analyze incidents in worker.'));
+      worker.terminate();
+    };
+
+    worker.postMessage(data);
+  });
+};
+
+
 // FIX: Use firebase.User which is the correct type for the v8 compat library user object.
 export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }> = ({ children, user }) => {
   const [rawData, setRawData] = useState<Incident[]>([]);
@@ -95,7 +117,7 @@ export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }
     setLoading(prev => ({ ...prev, analysis: true, forecast: true, recommendations: true }));
     
     try {
-      const analysisResult = analyzeIncidents(data);
+      const analysisResult = await runAnalysisInWorker(data);
       setAnalysis(analysisResult);
       setLoading(prev => ({ ...prev, analysis: false }));
 

@@ -3,7 +3,7 @@ import { MapIcon } from '../icons/MapIcon';
 import { useData } from '../../contexts/DataContext';
 
 const HeatMap: React.FC = () => {
-  const { analysis, setSelectedZip, rawData } = useData();
+  const { analysis, setSelectedZip, rawData, loading } = useData();
 
   const getSeverityColor = (severity: string | null) => {
     switch (severity) {
@@ -16,6 +16,7 @@ const HeatMap: React.FC = () => {
   };
 
   const sortedZips = [...analysis.zipAnalyses].sort((a, b) => a.zip.localeCompare(b.zip));
+  const showPlaceholder = loading.analysis || rawData.length === 0;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -24,9 +25,23 @@ const HeatMap: React.FC = () => {
         <h3 className="text-xl font-bold text-gray-800">Interactive ZIP Code Heat Map</h3>
       </div>
       
-      {rawData.length === 0 ? (
-        <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Upload data to see the heat map.</p>
+      {showPlaceholder ? (
+        <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden">
+            <img 
+              src="https://storage.googleapis.com/aistudio-project-files/8e1c6e1c-71e1-4122-9218-a62009214d02/85a1a2e9-5777-40b9-873b-5517b62ca708" 
+              alt="Heatmap placeholder" 
+              className="absolute inset-0 w-full h-full object-cover opacity-40" 
+            />
+             <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                <div className="text-center p-4 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+                  <h4 className="font-bold text-lg text-gray-800">
+                    {loading.analysis ? 'Analyzing Data...' : 'Awaiting Data'}
+                  </h4>
+                  <p className="text-gray-600 text-sm mt-1 max-w-xs">
+                    {loading.analysis ? 'The heat map will appear here once processing is complete.' : 'Upload a CSV file to generate the interactive heat map.'}
+                  </p>
+                </div>
+              </div>
         </div>
       ) : (
         <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
