@@ -134,38 +134,39 @@ const handleGetRecommendations = async (criticalZips: ZipAnalysis[]): Promise<Re
 };
 
 
-// FIX: Correctly typed the `context` parameter to `functions.https.CallableContext` to resolve the type error.
-export const callGemini = functions.https.onCall(async (data: any, context: functions.https.CallableContext) => {
-  // Check authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-        "unauthenticated",
-        "The function must be called while authenticated.",
-    );
-  }
-
-  const {type, payload} = data;
-
-  try {
-    switch (type) {
-      case "getForecast":
-        return await handleGetForecast(payload as AnalysisResult);
-      case "getRecommendations":
-        return await handleGetRecommendations(payload as ZipAnalysis[]);
-      default:
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            "The function must be called with a valid 'type'.",
-        );
+export const callGemini = functions
+  .runWith({ timeoutSeconds: 120 })
+  .https.onCall(async (data: any, context: functions.https.CallableContext) => {
+    // Check authentication
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+          "unauthenticated",
+          "The function must be called while authenticated.",
+      );
     }
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
+
+    const {type, payload} = data;
+
+    try {
+      switch (type) {
+        case "getForecast":
+          return await handleGetForecast(payload as AnalysisResult);
+        case "getRecommendations":
+          return await handleGetRecommendations(payload as ZipAnalysis[]);
+        default:
+          throw new functions.https.HttpsError(
+              "invalid-argument",
+              "The function must be called with a valid 'type'.",
+          );
+      }
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+      throw new functions.https.HttpsError(
+          "internal",
+          "An unexpected error occurred while contacting the Gemini API.",
+      );
     }
-    throw new functions.https.HttpsError(
-        "internal",
-        "An unexpected error occurred while contacting the Gemini API.",
-    );
-  }
-});
+  });

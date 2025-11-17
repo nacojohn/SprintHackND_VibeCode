@@ -16,6 +16,9 @@ interface Forecast {
   sevenDaySummary: string;
 }
 
+export type ProcessingStep = 'idle' | 'parsing' | 'validating' | 'uploading' | 'analyzing' | 'generatingInsights';
+
+
 interface DataContextType {
   rawData: Incident[];
   analysis: AnalysisResult;
@@ -32,8 +35,7 @@ interface DataContextType {
   setIsUploadModalOpen: (isOpen: boolean) => void;
   selectedZip: string | null;
   setSelectedZip: (zip: string | null) => void;
-  // FIX: Corrected the type for newIncidents to be an array of objects.
-  addIncidents: (newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[]) => Promise<void>;
+  addIncidents: (newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[], setProcessingStep: (step: ProcessingStep) => void) => Promise<void>;
 }
 
 interface PersistedData {
@@ -105,22 +107,27 @@ export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }
     await analysisDocRef.set(dataToPersist, { merge: true });
   }, [user]);
 
-  const processAndPersistData = useCallback(async (data: Incident[]) => {
-    setRawData(data);
+  const processAndPersistData = useCallback(async (data: Incident[], setProcessingStep?: (step: ProcessingStep) => void) => {
     if (data.length === 0) {
+      setRawData([]);
       setAnalysis(initialAnalysis);
       setRecommendations([]);
       setForecast(null);
       return;
     }
+    
+    // Update raw data state immediately for responsiveness
+    setRawData(data);
 
     setLoading(prev => ({ ...prev, analysis: true, forecast: true, recommendations: true }));
+    setProcessingStep?.('analyzing');
     
     try {
       const analysisResult = await runAnalysisInWorker(data);
       setAnalysis(analysisResult);
       setLoading(prev => ({ ...prev, analysis: false }));
 
+      setProcessingStep?.('generatingInsights');
       const criticalZips = analysisResult.zipAnalyses.filter(z => z.severity === 'Critical' || z.severity === 'High');
       
       let forecastResult: Forecast;
@@ -149,6 +156,7 @@ export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }
        console.error("Error processing and persisting data:", error);
     } finally {
         setLoading(prev => ({ ...prev, forecast: false, recommendations: false }));
+        setProcessingStep?.('idle');
     }
   }, [user, persistAnalysis]);
   
@@ -171,22 +179,27 @@ export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }
           dateTime: data.dateTime.toDate(),
         } as Incident;
       });
-      setRawData(incidents);
+     
 
       if (analysisSnapshot.exists && incidents.length > 0) {
         const persistedData = analysisSnapshot.data() as PersistedData;
+        setRawData(incidents);
         setAnalysis(persistedData.analysis);
         setForecast(persistedData.forecast);
         setRecommendations(persistedData.recommendations || []);
       } else if (incidents.length > 0) {
+        // If there's data but no analysis, run it
         await processAndPersistData(incidents);
       } else {
+        // No data, no analysis
+        setRawData([]);
         setAnalysis(initialAnalysis);
         setForecast(null);
         setRecommendations([]);
       }
     } catch (error) {
       console.error("Error loading initial data:", error);
+       setRawData([]);
       setAnalysis(initialAnalysis);
       setForecast(null);
       setRecommendations([]);
@@ -200,29 +213,34 @@ export const DataProvider: React.FC<{ children: ReactNode; user: firebase.User }
     loadInitialData();
   }, [loadInitialData]);
   
-  const addIncidents = useCallback(async (newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[]) => {
+  const addIncidents = useCallback(async (
+    newIncidents: (Omit<Incident, 'dateTime'> & { dateTime: any })[],
+    setProcessingStep: (step: ProcessingStep) => void
+  ) => {
     if (!user) throw new Error("User not authenticated");
     
-    setLoading(prev => ({ ...prev, data: true }));
-    const batch = db.batch();
+    // Batch write new incidents to Firestore
     const incidentsCollection = db.collection('users').doc(user.uid).collection('incidents');
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < newIncidents.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        const chunk = newIncidents.slice(i, i + BATCH_SIZE);
+        chunk.forEach(incident => {
+            const docRef = incidentsCollection.doc();
+            batch.set(docRef, incident);
+        });
+        await batch.commit();
+    }
     
-    newIncidents.forEach(incident => {
-      const docRef = incidentsCollection.doc();
-      batch.set(docRef, incident);
-    });
-    
-    await batch.commit();
-    
-    const allIncidentsSnapshot = await incidentsCollection.orderBy('dateTime', 'desc').get();
-    const allIncidents = allIncidentsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { ...data, dateTime: data.dateTime.toDate() } as Incident;
-    });
+    // Combine new data with existing data in memory for analysis
+    const combinedData = [
+        ...rawData,
+        ...newIncidents.map(inc => ({...inc, dateTime: new Date(inc.dateTime)} as Incident))
+    ].sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime());
 
-    await processAndPersistData(allIncidents);
-    setLoading(prev => ({ ...prev, data: false }));
-  }, [user, processAndPersistData]);
+    await processAndPersistData(combinedData, setProcessingStep);
+    
+  }, [user, rawData, processAndPersistData]);
 
   const toggleRecommendationCompleted = async (index: number) => {
     const updatedRecommendations = recommendations.map((rec, i) =>

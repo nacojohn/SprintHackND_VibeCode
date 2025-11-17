@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useData } from '../../contexts/DataContext';
+import { useData, ProcessingStep } from '../../contexts/DataContext';
 import { Incident } from '../../utils/analysis';
 import { storage } from '../../firebase';
 
@@ -9,7 +9,7 @@ const DataUploadModal: React.FC = () => {
   const { isUploadModalOpen, setIsUploadModalOpen, addIncidents } = useData();
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<ProcessingStep>('idle');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -26,7 +26,7 @@ const DataUploadModal: React.FC = () => {
   const resetState = () => {
     setFile(null);
     setError(null);
-    setIsProcessing(false);
+    setProcessingStep('idle');
     setIsUploadModalOpen(false);
   }
 
@@ -36,11 +36,10 @@ const DataUploadModal: React.FC = () => {
       return;
     }
     
-    setIsProcessing(true);
     setError(null);
 
     try {
-      // For this MVP, we parse client-side. A more robust solution might use a Cloud Function.
+      setProcessingStep('parsing');
       const parsedData = await new Promise<any[]>((resolve, reject) => {
         Papa.parse(file, {
           header: true,
@@ -56,15 +55,16 @@ const DataUploadModal: React.FC = () => {
         });
       });
       
+      setProcessingStep('validating');
       const validatedData = validateData(parsedData);
       
-      // Upload the raw file to storage for auditing/backup
+      setProcessingStep('uploading');
       const storageRef = storage.ref();
       const fileRef = storageRef.child(`uploads/${Date.now()}-${file.name}`);
       await fileRef.put(file);
 
-      // Add validated data to Firestore
-      await addIncidents(validatedData);
+      // addIncidents will now handle the subsequent processing steps
+      await addIncidents(validatedData, setProcessingStep);
 
       resetState();
 
@@ -74,13 +74,36 @@ const DataUploadModal: React.FC = () => {
       } else {
         setError("An unknown error occurred during processing.");
       }
-      setIsProcessing(false);
+      setProcessingStep('idle');
     }
   };
+  
+  const getButtonText = () => {
+    switch(processingStep) {
+        case 'parsing': return 'Parsing File...';
+        case 'validating': return 'Validating Data...';
+        case 'uploading': return 'Uploading to Cloud...';
+        case 'analyzing': return 'Analyzing Incidents...';
+        case 'generatingInsights': return 'Generating Insights...';
+        default: return 'Upload & Analyze';
+    }
+  }
+
 
   const validateData = (data: any[]): (Omit<Incident, 'dateTime'> & { dateTime: Date })[] => {
     const requiredFields = ['date_time', 'zip_code', 'naloxone_administered', 'naloxone_doses', 'outcome'];
     
+    if (data.length === 0) {
+      throw new Error("Validation Error: CSV file is empty or contains no data rows.");
+    }
+    
+    const sampleRow = data[0];
+    for (const field of requiredFields) {
+        if (!Object.prototype.hasOwnProperty.call(sampleRow, field)) {
+            throw new Error(`Validation Error: Missing required column '${field}'.`);
+        }
+    }
+
     return data.map((row, index) => {
       for (const field of requiredFields) {
         if (row[field] === undefined || row[field] === '') {
@@ -114,6 +137,8 @@ const DataUploadModal: React.FC = () => {
   };
 
   if (!isUploadModalOpen) return null;
+  
+  const isProcessing = processingStep !== 'idle';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -123,7 +148,7 @@ const DataUploadModal: React.FC = () => {
         
         <div>
           <label className="block w-full cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
-            <input type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+            <input type="file" accept=".csv" className="hidden" onChange={handleFileChange} disabled={isProcessing} />
             <span className="text-gray-500">{file ? file.name : "Click to select a CSV file"}</span>
           </label>
         </div>
@@ -140,10 +165,10 @@ const DataUploadModal: React.FC = () => {
           </button>
           <button 
             onClick={handleUpload}
-            className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+            className="px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 min-w-[150px]"
             disabled={!file || isProcessing}
           >
-            {isProcessing ? "Processing..." : "Upload & Analyze"}
+            {getButtonText()}
           </button>
         </div>
       </div>
