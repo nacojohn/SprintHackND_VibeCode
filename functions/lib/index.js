@@ -38,12 +38,12 @@ const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const genai_1 = require("@google/genai");
 admin.initializeApp();
-// Get Gemini API Key from Firebase Functions config
-// Run `firebase functions:config:set gemini.key="YOUR_API_KEY"` to set
-// FIX: Cast functions.config() to `any` to work around a type inference issue where it was being resolved as `never`.
-const API_KEY = functions.config().gemini.key;
+// The Gemini API key is expected to be set in Firebase config.
+// Set it by running: firebase functions:config:set gemini.key="YOUR_API_KEY"
+const API_KEY = functions.config().gemini?.key;
 if (!API_KEY) {
-    throw new Error("Gemini API Key is not set in Firebase Functions config.");
+    throw new Error("Gemini API Key is not set in Firebase Functions config. " +
+        "Set it with: firebase functions:config:set gemini.key=\"YOUR_API_KEY\"");
 }
 const ai = new genai_1.GoogleGenAI({ apiKey: API_KEY });
 const forecastSchema = {
@@ -129,8 +129,9 @@ const handleGetRecommendations = async (criticalZips) => {
     const json = JSON.parse(text);
     return json.sort((a, b) => b.priorityScore - a.priorityScore);
 };
-// FIX: Explicitly typed `data` and `context` parameters to fix incorrect type inference for the onCall handler.
-exports.callGemini = functions.https.onCall(async (data, context) => {
+exports.callGemini = functions
+    .runWith({ timeoutSeconds: 120 })
+    .https.onCall(async (data, context) => {
     // Check authentication
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
