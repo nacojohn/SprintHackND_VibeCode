@@ -1,16 +1,15 @@
-// FIX: Removed vite/client reference that was causing a resolution error and manually defined
-// the ImportMeta interface to provide types for environment variables.
-interface ImportMetaEnv {
-  readonly VITE_FIREBASE_API_KEY: string;
-  readonly VITE_FIREBASE_AUTH_DOMAIN: string;
-  readonly VITE_FIREBASE_PROJECT_ID: string;
-  readonly VITE_FIREBASE_STORAGE_BUCKET: string;
-  readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
-  readonly VITE_FIREBASE_APP_ID: string;
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv;
+// FIX: Manually define `import.meta.env` types to resolve TypeScript errors for Vite environment variables by augmenting the global `ImportMeta` interface. This is necessary because the `vite/client` type reference may not be correctly picked up in some project configurations.
+declare global {
+  interface ImportMeta {
+    readonly env: {
+      readonly VITE_FIREBASE_API_KEY: string;
+      readonly VITE_FIREBASE_AUTH_DOMAIN: string;
+      readonly VITE_FIREBASE_PROJECT_ID: string;
+      readonly VITE_FIREBASE_STORAGE_BUCKET: string;
+      readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
+      readonly VITE_FIREBASE_APP_ID: string;
+    };
+  }
 }
 
 import firebase from 'firebase/compat/app';

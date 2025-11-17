@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -9,13 +10,18 @@ import firebase from 'firebase/compat/app';
 export type Page = 'landing' | 'login' | 'dashboard';
 
 const App: React.FC = () => {
-  // FIX: Use firebase.auth.User as the type for the user state.
-  const [user, setUser] = useState<firebase.auth.User | null>(null);
+  // FIX: Use firebase.User which is the correct type for the v8 compat library user object.
+  const [user, setUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState<Page>('landing');
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
+      if (user) {
+        setCurrentPage('dashboard');
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -23,14 +29,11 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     auth.signOut();
+    setCurrentPage('landing');
   };
   
   const navigateTo = (page: Page) => {
-     if (page === 'login') {
-       // A bit of a hack to show login page when user is logged out
-       // but wants to navigate from landing page.
-       setUser(null);
-     }
+     setCurrentPage(page);
   };
 
   if (loading) {
@@ -41,13 +44,22 @@ const App: React.FC = () => {
     );
   }
 
+  const renderUnauthenticatedView = () => {
+    switch(currentPage) {
+      case 'login':
+        return <LoginPage />;
+      case 'landing':
+      default:
+        return <LandingPage navigateTo={navigateTo} />;
+    }
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen text-gray-800 font-sans">
       {user ? (
         <DashboardPage user={user} handleLogout={handleLogout} />
       ) : (
-         <LandingPage navigateTo={navigateTo} />
-        // <LoginPage /> // This is now part of the conditional rendering logic
+         renderUnauthenticatedView()
       )}
     </div>
   );

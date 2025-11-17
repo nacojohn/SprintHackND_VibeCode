@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ShieldCheckIcon } from '../icons/ShieldCheckIcon';
 import { LogOutIcon } from '../icons/LogOutIcon';
@@ -6,8 +7,8 @@ import { useData } from '../../contexts/DataContext';
 import firebase from 'firebase/compat/app';
 
 interface DashboardHeaderProps {
-  // FIX: Use firebase.auth.User as the type for the user prop.
-  user: firebase.auth.User;
+  // FIX: Use firebase.User which is the correct type for the v8 compat library user object.
+  user: firebase.User;
   handleLogout: () => void;
 }
 
